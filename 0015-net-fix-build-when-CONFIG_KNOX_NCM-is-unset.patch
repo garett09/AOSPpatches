@@ -1,0 +1,345 @@
+From a1b216f3330dbce48f061d9b0de8d05d758f9a3d Mon Sep 17 00:00:00 2001
+From: djb77 <dwayne.bakewell@gmail.com>
+Date: Fri, 27 Mar 2020 17:35:45 +0000
+Subject: [PATCH 15/17] net: fix build when CONFIG_KNOX_NCM is unset
+
+---
+ net/core/sock.c                   |  96 ------------------------
+ net/ipv4/udp.c                    | 118 +-----------------------------
+ net/netfilter/nf_conntrack_core.c |  25 -------
+ 3 files changed, 2 insertions(+), 237 deletions(-)
+
+diff --git a/net/core/sock.c b/net/core/sock.c
+index 11ccb5bcafb7..56ca800ce265 100644
+--- a/net/core/sock.c
++++ b/net/core/sock.c
+@@ -685,46 +685,6 @@ static int sock_set_dns_uid(struct sock *sk, char __user *optval, int optlen)
+ 	return ret;
+ }
+ 
+-/** The function sets the pid and the process name associated with the dns socket. **/
+-static int sock_set_dns_pid(struct sock *sk, char __user *optval, int optlen)
+-{
+-	int ret = -EADDRNOTAVAIL;
+-	struct pid *pid_struct = NULL;
+-	struct task_struct *task = NULL;
+-	int process_returnValue = -1;
+-	char full_process_name[PROCESS_NAME_LEN_NAP] = {0};
+-
+-	if (optlen < 0)
+-		goto out;
+-
+-	if (optlen == sizeof(pid_t)) {
+-		pid_t dns_pid;
+-		ret = -EFAULT;
+-		if (copy_from_user(&dns_pid, optval, sizeof(dns_pid)))
+-			goto out;
+-		memcpy(&sk->knox_dns_pid, &dns_pid, sizeof(sk->knox_dns_pid));
+-		if(check_ncm_flag()) {
+-			pid_struct = find_get_pid(dns_pid);
+-			if (pid_struct != NULL) {
+-				task = pid_task(pid_struct,PIDTYPE_PID);
+-				if (task != NULL) {
+-					process_returnValue = get_cmdline(task, full_process_name, sizeof(full_process_name)-1);
+-					if (process_returnValue > 0) {
+-						memcpy(sk->dns_process_name, full_process_name, sizeof(sk->dns_process_name)-1);
+-					} else {
+-						memcpy(sk->dns_process_name, task->comm, sizeof(task->comm)-1);
+-					}
+-				}
+-			}
+-		}
+-		ret = 0;
+-	}
+-
+-out:
+-	return ret;
+-}
+-
+-/* END_OF_KNOX_NPA */
+ 
+ static inline void sock_valbool_flag(struct sock *sk, int bit, int valbool)
+ {
+@@ -779,9 +739,6 @@ int sock_setsockopt(struct socket *sock, int level, int optname,
+ 		return sock_set_domain_name(sk, optval, optlen);
+ 	if (optname == SO_SET_DNS_UID)
+ 		return sock_set_dns_uid(sk, optval, optlen);
+-	if (optname == SO_SET_DNS_PID)
+-		return sock_set_dns_pid(sk, optval, optlen);
+-	/* END_OF_KNOX_NPA */
+ 
+ 	if (optlen < sizeof(int))
+ 		return -EINVAL;
+@@ -1539,63 +1496,10 @@ struct sock *sk_alloc(struct net *net, int family, gfp_t priority,
+ {
+ 	struct sock *sk;
+ 
+-	/* START_OF_KNOX_NPA */
+-	struct pid *pid_struct = NULL;
+-	struct task_struct *task = NULL;
+-	int process_returnValue = -1;
+-	char full_process_name[PROCESS_NAME_LEN_NAP] = {0};
+-	struct pid *parent_pid_struct = NULL;
+-	struct task_struct *parent_task = NULL;
+-	int parent_returnValue = -1;
+-	char full_parent_process_name[PROCESS_NAME_LEN_NAP] = {0};
+-	/* END_OF_KNOX_NPA */
+ 
+ 	sk = sk_prot_alloc(prot, priority | __GFP_ZERO, family);
+ 	if (sk) {
+ 		sk->sk_family = family;
+-		/* START_OF_KNOX_NPA */
+-		/* assign values to members of sock structure when npa flag is present */
+-		sk->knox_uid = current->cred->uid.val;
+-		sk->knox_pid = current->tgid;
+-		sk->knox_puid = 0;
+-		sk->knox_ppid = 0;
+-		sk->knox_dns_uid = 0;
+-		sk->knox_dns_pid = 0;
+-		memset(sk->process_name,'\0',sizeof(sk->process_name));
+-		memset(sk->parent_process_name,'\0',sizeof(sk->parent_process_name));
+-		memset(sk->dns_process_name,'\0',sizeof(sk->dns_process_name));
+-		memset(sk->domain_name,'\0',sizeof(sk->domain_name));
+-		if (check_ncm_flag()) {
+-			pid_struct = find_get_pid(current->tgid);
+-			if (pid_struct != NULL) {
+-				task = pid_task(pid_struct, PIDTYPE_PID);
+-				if (task != NULL) {
+-					process_returnValue = get_cmdline(task, full_process_name, sizeof(full_process_name)-1);
+-					if (process_returnValue > 0) {
+-						memcpy(sk->process_name, full_process_name, sizeof(sk->process_name)-1);
+-					} else {
+-						memcpy(sk->process_name, task->comm, sizeof(task->comm)-1);
+-					}
+-					if (task->parent != NULL) {
+-						parent_pid_struct = find_get_pid(task->parent->tgid);
+-						if (parent_pid_struct != NULL) {
+-							parent_task = pid_task(parent_pid_struct, PIDTYPE_PID);
+-							if (parent_task != NULL) {
+-								parent_returnValue = get_cmdline(parent_task, full_parent_process_name, sizeof(full_parent_process_name)-1);
+-								if (parent_returnValue > 0) {
+-									memcpy(sk->parent_process_name, full_parent_process_name, sizeof(sk->parent_process_name)-1);
+-								} else {
+-									memcpy(sk->parent_process_name, parent_task->comm, sizeof(parent_task->comm)-1);
+-								}
+-								sk->knox_puid = parent_task->cred->uid.val;
+-								sk->knox_ppid = parent_task->tgid;
+-							}
+-						}
+-					}
+-				}
+-			}
+-		}
+-		/* END_OF_KNOX_NPA */
+ 		/*
+ 		 * See comment in struct sock definition to understand
+ 		 * why we need sk_prot_creator -acme
+diff --git a/net/ipv4/udp.c b/net/ipv4/udp.c
+index 387353b23115..ebf6e521018e 100644
+--- a/net/ipv4/udp.c
++++ b/net/ipv4/udp.c
+@@ -115,9 +115,6 @@
+ #include "udp_impl.h"
+ #include <net/sock_reuseport.h>
+ #include <net/addrconf.h>
+-// KNOX NPA - START
+-#include <net/ncm.h>
+-// KNOX NPA - END
+ 
+ struct udp_table udp_table __read_mostly;
+ EXPORT_SYMBOL(udp_table);
+@@ -1818,66 +1815,11 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
+ 	if (sk) {
+ 		struct dst_entry *dst = skb_dst(skb);
+ 		int ret;
+-		// KNOX NPA - START
+-		struct nf_conn *ct = NULL;
+-		enum ip_conntrack_info ctinfo;
+-		struct nf_conntrack_tuple *tuple = NULL;
+-		char srcaddr[INET6_ADDRSTRLEN_NAP];
+-		char dstaddr[INET6_ADDRSTRLEN_NAP];
+-		// KNOX NPA - END
++
+ 
+ 		if (unlikely(sk->sk_rx_dst != dst))
+ 			udp_sk_rx_dst_set(sk, dst);
+ 
+-		// KNOX NPA - START
+-		/* function to handle open flows with incoming udp packets */
+-		if (check_ncm_flag()) {
+-			if ( (sk) && (sk->sk_protocol == IPPROTO_UDP) ) {
+-				ct = nf_ct_get(skb, &ctinfo);
+-				if ( (ct) && (!atomic_read(&ct->startFlow)) && (!nf_ct_is_dying(ct)) ) {
+-					tuple = &ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
+-					if (tuple) {
+-						sprintf(srcaddr,"%pI4",(void *)&tuple->src.u3.ip);
+-						sprintf(dstaddr,"%pI4",(void *)&tuple->dst.u3.ip);
+-						if ( !isIpv4AddressEqualsNull(srcaddr, dstaddr) ) {
+-							atomic_set(&ct->startFlow, 1);
+-							if ( check_intermediate_flag() ) {
+-								/* Use 'atomic_set(&ct->intermediateFlow, 1); ct->npa_timeout = ((u32)(jiffies)) + (get_intermediate_timeout() * HZ);' if struct nf_conn->timeout is of type u32; */
+-								ct->npa_timeout = ((u32)(jiffies)) + (get_intermediate_timeout() * HZ);
+-								atomic_set(&ct->intermediateFlow, 1);
+-								/* Use 'unsigned long timeout = ct->timeout.expires - jiffies;
+-										if ( (timeout > 0) && ((timeout/HZ) > 5) ) {
+-											atomic_set(&ct->intermediateFlow, 1);
+-											ct->npa_timeout.expires = (jiffies) + (get_intermediate_timeout() * HZ);
+-											add_timer(&ct->npa_timeout);
+-										}'
+-								if struct nf_conn->timeout is of type struct timer_list; */
+-							}
+-							ct->knox_uid = sk->knox_uid;
+-							ct->knox_pid = sk->knox_pid;
+-							memcpy(ct->process_name,sk->process_name,sizeof(ct->process_name)-1);
+-							ct->knox_puid = sk->knox_puid;
+-							ct->knox_ppid = sk->knox_ppid;
+-							memcpy(ct->parent_process_name,sk->parent_process_name,sizeof(ct->parent_process_name)-1);
+-							memcpy(ct->domain_name,sk->domain_name,sizeof(ct->domain_name)-1);
+-							if ( (skb->dev) ) {
+-								memcpy(ct->interface_name,skb->dev->name,sizeof(ct->interface_name)-1);
+-							} else {
+-								sprintf(ct->interface_name,"%s","null");
+-							}
+-							if ( (tuple != NULL) && (ntohs(tuple->dst.u.udp.port) == DNS_PORT_NAP) && (ct->knox_uid == INIT_UID_NAP) && (sk->knox_dns_uid > INIT_UID_NAP) ) {
+-								ct->knox_puid = sk->knox_dns_uid;
+-								ct->knox_ppid = sk->knox_dns_pid;
+-								memcpy(ct->parent_process_name,sk->dns_process_name,sizeof(ct->parent_process_name)-1);
+-							}
+-							knox_collect_conntrack_data(ct, NCM_FLOW_TYPE_OPEN, 3);
+-						}
+-					}
+-				}
+-			}
+-		}
+-		// KNOX NPA - END
+-
+ 		ret = udp_unicast_rcv_skb(sk, skb, uh);
+ 		sock_put(sk);
+ 		return ret;
+@@ -1888,64 +1830,8 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
+ 						saddr, daddr, udptable, proto);
+ 
+ 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
+-	if (sk) {
+-		// KNOX NPA - START
+-		struct nf_conn *ct = NULL;
+-		enum ip_conntrack_info ctinfo;
+-		struct nf_conntrack_tuple *tuple = NULL;
+-		char srcaddr[INET6_ADDRSTRLEN_NAP];
+-		char dstaddr[INET6_ADDRSTRLEN_NAP];
+-		// KNOX NPA - END
+-		// KNOX NPA - START
+-		/* function to handle open flows with incoming udp packets */
+-		if (check_ncm_flag()) {
+-			if ( (sk) && (sk->sk_protocol == IPPROTO_UDP) ) {
+-				ct = nf_ct_get(skb, &ctinfo);
+-				if ( (ct) && (!atomic_read(&ct->startFlow)) && (!nf_ct_is_dying(ct)) ) {
+-					tuple = &ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
+-					if (tuple) {
+-						sprintf(srcaddr,"%pI4",(void *)&tuple->src.u3.ip);
+-						sprintf(dstaddr,"%pI4",(void *)&tuple->dst.u3.ip);
+-						if ( !isIpv4AddressEqualsNull(srcaddr, dstaddr) ) {
+-							atomic_set(&ct->startFlow, 1);
+-							if ( check_intermediate_flag() ) {
+-								/* Use 'atomic_set(&ct->intermediateFlow, 1); ct->npa_timeout = ((u32)(jiffies)) + (get_intermediate_timeout() * HZ);' if struct nf_conn->timeout is of type u32; */
+-								ct->npa_timeout = ((u32)(jiffies)) + (get_intermediate_timeout() * HZ);
+-								atomic_set(&ct->intermediateFlow, 1);
+-								/* Use 'unsigned long timeout = ct->timeout.expires - jiffies;
+-										if ( (timeout > 0) && ((timeout/HZ) > 5) ) {
+-											atomic_set(&ct->intermediateFlow, 1);
+-											ct->npa_timeout.expires = (jiffies) + (get_intermediate_timeout() * HZ);
+-											add_timer(&ct->npa_timeout);
+-										}'
+-								if struct nf_conn->timeout is of type struct timer_list; */
+-							}
+-							ct->knox_uid = sk->knox_uid;
+-							ct->knox_pid = sk->knox_pid;
+-							memcpy(ct->process_name,sk->process_name,sizeof(ct->process_name)-1);
+-							ct->knox_puid = sk->knox_puid;
+-							ct->knox_ppid = sk->knox_ppid;
+-							memcpy(ct->parent_process_name,sk->parent_process_name,sizeof(ct->parent_process_name)-1);
+-							memcpy(ct->domain_name,sk->domain_name,sizeof(ct->domain_name)-1);
+-							if ( (skb->dev) ) {
+-								memcpy(ct->interface_name,skb->dev->name,sizeof(ct->interface_name)-1);
+-							} else {
+-								sprintf(ct->interface_name,"%s","null");
+-							}
+-							if ( (tuple != NULL) && (ntohs(tuple->dst.u.udp.port) == DNS_PORT_NAP) && (ct->knox_uid == INIT_UID_NAP) && (sk->knox_dns_uid > INIT_UID_NAP) ) {
+-								ct->knox_puid = sk->knox_dns_uid;
+-								ct->knox_ppid = sk->knox_dns_pid;
+-								memcpy(ct->parent_process_name,sk->dns_process_name,sizeof(ct->parent_process_name)-1);
+-							}
+-							knox_collect_conntrack_data(ct, NCM_FLOW_TYPE_OPEN, 4);
+-						}
+-					}
+-				}
+-			}
+-		}
+-		// KNOX NPA - END
++	if (sk)
+ 		return udp_unicast_rcv_skb(sk, skb, uh);
+-	}
+ 
+ 	if (!xfrm4_policy_check(NULL, XFRM_POLICY_IN, skb))
+ 		goto drop;
+diff --git a/net/netfilter/nf_conntrack_core.c b/net/netfilter/nf_conntrack_core.c
+index e83b2c34600f..9b37d2a4eb75 100644
+--- a/net/netfilter/nf_conntrack_core.c
++++ b/net/netfilter/nf_conntrack_core.c
+@@ -356,13 +356,6 @@ static void nf_ct_add_to_dying_list(struct nf_conn *ct)
+ {
+ 	struct ct_pcpu *pcpu;
+ 
+-	// KNOX NPA - START
+-	/* Add 'del_timer(&ct->npa_timeout)' if struct nf_conn->timeout is of type struct timer_list; */
+-	/* send dying conntrack entry to collect data */
+-	if ( (check_ncm_flag()) && (ct != NULL) && (atomic_read(&ct->startFlow)) ) {
+-		knox_collect_conntrack_data(ct, NCM_FLOW_TYPE_CLOSE, 10);
+-	}
+-	// KNOX NPA - END
+ 
+ 	/* add this conntrack to the (per cpu) dying list */
+ 	ct->cpu = smp_processor_id();
+@@ -1043,15 +1036,7 @@ static void gc_worker(struct work_struct *work)
+ 				nf_ct_gc_expired(tmp);
+ 				expired_count++;
+ 				continue;
+-			// KNOX NPA - START	
+-			} else if ( (tmp != NULL) && (check_ncm_flag()) && (check_intermediate_flag()) && (atomic_read(&tmp->startFlow)) && (atomic_read(&tmp->intermediateFlow)) ) {
+-				s32 npa_timeout = tmp->npa_timeout - ((u32)(jiffies));
+-				if (npa_timeout <= 0) {
+-					tmp->npa_timeout = ((u32)(jiffies)) + (get_intermediate_timeout() * HZ);
+-					knox_collect_conntrack_data(tmp, NCM_FLOW_TYPE_INTERMEDIATE, 20);
+-				}
+ 			}
+-			// KNOX NPA - END
+ 		}
+ 
+ 		/* could check get_nulls_value() here and restart if ct
+@@ -1085,11 +1070,6 @@ static void gc_worker(struct work_struct *work)
+ 	ratio = scanned ? expired_count * 100 / scanned : 0;
+ 	if (ratio > GC_EVICT_RATIO) {
+ 		gc_work->next_gc_run = min_interval;
+-		// KNOX NPA - START
+-		if ( (check_ncm_flag()) && (check_intermediate_flag()) ) {
+-			gc_work->next_gc_run = 0;
+-		}
+-		// KNOX NPA - END
+ 	} else {
+ 		unsigned int max = GC_MAX_SCAN_JIFFIES / GC_MAX_BUCKETS_DIV;
+ 
+@@ -1098,11 +1078,6 @@ static void gc_worker(struct work_struct *work)
+ 		gc_work->next_gc_run += min_interval;
+ 		if (gc_work->next_gc_run > max)
+ 			gc_work->next_gc_run = max;
+-		// KNOX NPA - START
+-		if ( (check_ncm_flag()) && (check_intermediate_flag()) ) {
+-			gc_work->next_gc_run = 0;
+-		}
+-		// KNOX NPA - END
+ 	}
+ 
+ 	next_run = gc_work->next_gc_run;
+-- 
+2.17.1
+

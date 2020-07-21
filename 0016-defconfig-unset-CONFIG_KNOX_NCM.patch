@@ -1,0 +1,53 @@
+From 0b7a3ae9af707b59786efb7970836c87adad4854 Mon Sep 17 00:00:00 2001
+From: synt4x93 <synt4x.93@gmail.com>
+Date: Fri, 10 Apr 2020 11:35:01 +0100
+Subject: [PATCH 16/17] defconfig: unset CONFIG_KNOX_NCM
+
+---
+ arch/arm64/configs/exynos9810-crownlte_defconfig | 2 +-
+ arch/arm64/configs/exynos9810-star2lte_defconfig | 2 +-
+ arch/arm64/configs/exynos9810-starlte_defconfig  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/configs/exynos9810-crownlte_defconfig b/arch/arm64/configs/exynos9810-crownlte_defconfig
+index 6bd4830e4b1c..a121a09acdf3 100644
+--- a/arch/arm64/configs/exynos9810-crownlte_defconfig
++++ b/arch/arm64/configs/exynos9810-crownlte_defconfig
+@@ -1127,7 +1127,7 @@ CONFIG_NET_SCH_FIFO=y
+ # CONFIG_NET_SWITCHDEV is not set
+ # CONFIG_NET_L3_MASTER_DEV is not set
+ # CONFIG_NET_NCSI is not set
+-CONFIG_KNOX_NCM=y
++# CONFIG_KNOX_NCM is not set
+ CONFIG_RPS=y
+ CONFIG_RFS_ACCEL=y
+ CONFIG_XPS=y
+diff --git a/arch/arm64/configs/exynos9810-star2lte_defconfig b/arch/arm64/configs/exynos9810-star2lte_defconfig
+index 98abd89f376d..70b857be75c1 100644
+--- a/arch/arm64/configs/exynos9810-star2lte_defconfig
++++ b/arch/arm64/configs/exynos9810-star2lte_defconfig
+@@ -1127,7 +1127,7 @@ CONFIG_NET_SCH_FIFO=y
+ # CONFIG_NET_SWITCHDEV is not set
+ # CONFIG_NET_L3_MASTER_DEV is not set
+ # CONFIG_NET_NCSI is not set
+-CONFIG_KNOX_NCM=y
++# CONFIG_KNOX_NCM is not set
+ CONFIG_RPS=y
+ CONFIG_RFS_ACCEL=y
+ CONFIG_XPS=y
+diff --git a/arch/arm64/configs/exynos9810-starlte_defconfig b/arch/arm64/configs/exynos9810-starlte_defconfig
+index 653139e4f597..d3d3b35ac75d 100644
+--- a/arch/arm64/configs/exynos9810-starlte_defconfig
++++ b/arch/arm64/configs/exynos9810-starlte_defconfig
+@@ -1127,7 +1127,7 @@ CONFIG_NET_SCH_FIFO=y
+ # CONFIG_NET_SWITCHDEV is not set
+ # CONFIG_NET_L3_MASTER_DEV is not set
+ # CONFIG_NET_NCSI is not set
+-CONFIG_KNOX_NCM=y
++# CONFIG_KNOX_NCM is not set
+ CONFIG_RPS=y
+ CONFIG_RFS_ACCEL=y
+ CONFIG_XPS=y
+-- 
+2.17.1
+

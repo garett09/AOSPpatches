@@ -1,0 +1,68 @@
+From 12d4853fce334413c52b94902274c68994bd7862 Mon Sep 17 00:00:00 2001
+From: synt4x93 <synt4x.93@gmail.com>
+Date: Mon, 23 Mar 2020 19:31:33 +0000
+Subject: [PATCH 17/17] dts: remove /odm mount
+
+---
+ arch/arm64/boot/dts/exynos/exynos9810-crownlte_common.dtsi | 7 -------
+ arch/arm64/boot/dts/exynos/exynos9810-star2lte_common.dtsi | 7 -------
+ arch/arm64/boot/dts/exynos/exynos9810-starlte_common.dtsi  | 7 -------
+ 3 files changed, 21 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/exynos/exynos9810-crownlte_common.dtsi b/arch/arm64/boot/dts/exynos/exynos9810-crownlte_common.dtsi
+index e719e41c347a..d144783378c9 100644
+--- a/arch/arm64/boot/dts/exynos/exynos9810-crownlte_common.dtsi
++++ b/arch/arm64/boot/dts/exynos/exynos9810-crownlte_common.dtsi
+@@ -60,13 +60,6 @@
+ 					mnt_flags = "ro";
+ 					fsmgr_flags = "wait";
+ 				};
+-				odm {
+-					compatible = "android,odm";
+-					dev = "/dev/block/platform/11120000.ufs/by-name/ODM";
+-					type = "ext4";
+-					mnt_flags = "ro";
+-					fsmgr_flags = "wait";
+-				};
+ 			};
+ 		};
+ 	};
+diff --git a/arch/arm64/boot/dts/exynos/exynos9810-star2lte_common.dtsi b/arch/arm64/boot/dts/exynos/exynos9810-star2lte_common.dtsi
+index 9db8ebcf83b8..3ca2e026969b 100644
+--- a/arch/arm64/boot/dts/exynos/exynos9810-star2lte_common.dtsi
++++ b/arch/arm64/boot/dts/exynos/exynos9810-star2lte_common.dtsi
+@@ -59,13 +59,6 @@
+ 					mnt_flags = "ro";
+ 					fsmgr_flags = "wait";
+ 				};
+-				odm {
+-					compatible = "android,odm";
+-					dev = "/dev/block/platform/11120000.ufs/by-name/ODM";
+-					type = "ext4";
+-					mnt_flags = "ro";
+-					fsmgr_flags = "wait";
+-				};
+ 			};
+ 		};
+ 	};
+diff --git a/arch/arm64/boot/dts/exynos/exynos9810-starlte_common.dtsi b/arch/arm64/boot/dts/exynos/exynos9810-starlte_common.dtsi
+index 8ab516ddc134..a0746e73cfe7 100644
+--- a/arch/arm64/boot/dts/exynos/exynos9810-starlte_common.dtsi
++++ b/arch/arm64/boot/dts/exynos/exynos9810-starlte_common.dtsi
+@@ -59,13 +59,6 @@
+ 					mnt_flags = "ro";
+ 					fsmgr_flags = "wait";
+ 				};
+-				odm {
+-					compatible = "android,odm";
+-					dev = "/dev/block/platform/11120000.ufs/by-name/ODM";
+-					type = "ext4";
+-					mnt_flags = "ro";
+-					fsmgr_flags = "wait";
+-				};
+ 			};
+ 		};
+ 	};
+-- 
+2.17.1
+

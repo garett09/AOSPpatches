@@ -1,0 +1,25 @@
+From b080e3cc3ec548fc8a9ebe591e0bd193906b094a Mon Sep 17 00:00:00 2001
+From: Stricted <info@stricted.net>
+Date: Mon, 26 Aug 2019 18:03:34 +0000
+Subject: [PATCH 11/17] video: mdnie: fix lux node permissions
+
+---
+ drivers/video/fbdev/exynos/panel/mdnie.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/fbdev/exynos/panel/mdnie.c b/drivers/video/fbdev/exynos/panel/mdnie.c
+index c75b9584efb1..735aecd70311 100644
+--- a/drivers/video/fbdev/exynos/panel/mdnie.c
++++ b/drivers/video/fbdev/exynos/panel/mdnie.c
+@@ -1221,7 +1221,7 @@ struct device_attribute mdnie_dev_attrs[] = {
+ 	__PANEL_ATTR_RW(scenario, 0664),
+ 	__PANEL_ATTR_RW(accessibility, 0664),
+ 	__PANEL_ATTR_RW(bypass, 0664),
+-	__PANEL_ATTR_RW(lux, 0000),
++	__PANEL_ATTR_RW(lux, 0664),
+ 	__PANEL_ATTR_RO(mdnie, 0444),
+ 	__PANEL_ATTR_RW(sensorRGB, 0664),
+ 	__PANEL_ATTR_RW(whiteRGB, 0664),
+-- 
+2.17.1
+

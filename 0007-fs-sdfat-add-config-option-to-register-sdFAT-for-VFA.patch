@@ -1,0 +1,122 @@
+From 4ce6bffb8749b607de7a03c1dac7e83572935b6f Mon Sep 17 00:00:00 2001
+From: Paul Keith <javelinanddart@gmail.com>
+Date: Fri, 2 Mar 2018 05:10:27 +0100
+Subject: [PATCH 07/17] fs: sdfat: add config option to register sdFAT for VFAT
+
+---
+ fs/sdfat/Kconfig |  7 +++++++
+ fs/sdfat/sdfat.c | 45 +++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+)
+
+diff --git a/fs/sdfat/Kconfig b/fs/sdfat/Kconfig
+index 1c36ac1d2b36..ee15cd308b07 100644
+--- a/fs/sdfat/Kconfig
++++ b/fs/sdfat/Kconfig
+@@ -22,6 +22,13 @@ config SDFAT_USE_FOR_EXFAT
+ 	help
+ 	  If you want to register sdFAT as available for exFAT, say Y.
+ 
++config SDFAT_USE_FOR_VFAT
++	bool "Register sdFAT as VFAT"
++	default y
++	depends on SDFAT_FS && !VFAT_FS
++	help
++	  If you want to register sdFAT as available for VFAT, say Y.
++
+ config SDFAT_DELAYED_META_DIRTY
+ 	bool "Enable delayed metadata dirty"
+ 	default y
+diff --git a/fs/sdfat/sdfat.c b/fs/sdfat/sdfat.c
+index fd39803aa041..6f3eec0b2836 100644
+--- a/fs/sdfat/sdfat.c
++++ b/fs/sdfat/sdfat.c
+@@ -4568,6 +4568,12 @@ enum {
+ 	Opt_discard,
+ 	Opt_fs,
+ 	Opt_adj_req,
++#ifdef CONFIG_SDFAT_USE_FOR_VFAT
++	Opt_shortname_lower,
++	Opt_shortname_win95,
++	Opt_shortname_winnt,
++	Opt_shortname_mixed,
++#endif /* CONFIG_SDFAT_USE_FOR_VFAT */
+ };
+ 
+ static const match_table_t sdfat_tokens = {
+@@ -4596,6 +4602,12 @@ static const match_table_t sdfat_tokens = {
+ 	{Opt_discard, "discard"},
+ 	{Opt_fs, "fs=%s"},
+ 	{Opt_adj_req, "adj_req"},
++#ifdef CONFIG_SDFAT_USE_FOR_VFAT
++	{Opt_shortname_lower, "shortname=lower"},
++	{Opt_shortname_win95, "shortname=win95"},
++	{Opt_shortname_winnt, "shortname=winnt"},
++	{Opt_shortname_mixed, "shortname=mixed"},
++#endif /* CONFIG_SDFAT_USE_FOR_VFAT */
+ 	{Opt_err, NULL}
+ };
+ 
+@@ -4762,6 +4774,14 @@ static int parse_options(struct super_block *sb, char *options, int silent,
+ 			IMSG("adjust request config is not enabled. ignore\n");
+ #endif
+ 			break;
++#ifdef CONFIG_SDFAT_USE_FOR_VFAT
++		case Opt_shortname_lower:
++		case Opt_shortname_win95:
++		case Opt_shortname_mixed:
++			pr_warn("[SDFAT] DRAGONS AHEAD! sdFAT only understands \"shortname=winnt\"!\n");
++		case Opt_shortname_winnt:
++			break;
++#endif /* CONFIG_SDFAT_USE_FOR_VFAT */
+ 		default:
+ 			if (!silent) {
+ 				sdfat_msg(sb, KERN_ERR,
+@@ -5101,6 +5121,20 @@ static struct file_system_type exfat_fs_type = {
+ };
+ #endif /* CONFIG_SDFAT_USE_FOR_EXFAT */
+ 
++#ifdef CONFIG_SDFAT_USE_FOR_VFAT
++static struct file_system_type vfat_fs_type = {
++	.owner       = THIS_MODULE,
++	.name        = "vfat",
++	.mount       = sdfat_fs_mount,
++#ifdef CONFIG_SDFAT_DBG_IOCTL
++	.kill_sb    = sdfat_debug_kill_sb,
++#else
++	.kill_sb    = kill_block_super,
++#endif /* CONFIG_SDFAT_DBG_IOCTL */
++	.fs_flags    = FS_REQUIRES_DEV,
++};
++#endif /* CONFIG_SDFAT_USE_FOR_VFAT */
++
+ static int __init init_sdfat_fs(void)
+ {
+ 	int err;
+@@ -5151,6 +5185,14 @@ static int __init init_sdfat_fs(void)
+ 	}
+ #endif /* CONFIG_SDFAT_USE_FOR_EXFAT */
+ 
++#ifdef CONFIG_SDFAT_USE_FOR_VFAT
++	err = register_filesystem(&vfat_fs_type);
++	if (err) {
++		pr_err("[SDFAT] failed to register for vfat filesystem\n");
++		goto error;
++	}
++#endif /* CONFIG_SDFAT_USE_FOR_VFAT */
++
+ 	return 0;
+ error:
+ 	sdfat_uevent_uninit();
+@@ -5185,6 +5227,9 @@ static void __exit exit_sdfat_fs(void)
+ #ifdef CONFIG_SDFAT_USE_FOR_EXFAT
+ 	unregister_filesystem(&exfat_fs_type);
+ #endif /* CONFIG_SDFAT_USE_FOR_EXFAT */
++#ifdef CONFIG_SDFAT_USE_FOR_VFAT
++	unregister_filesystem(&vfat_fs_type);
++#endif /* CONFIG_SDFAT_USE_FOR_VFAT */
+ 	fsapi_shutdown();
+ }
+ 
+-- 
+2.17.1
+

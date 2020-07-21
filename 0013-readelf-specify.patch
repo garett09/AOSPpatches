@@ -1,0 +1,42 @@
+From 69a895052cf0208438ff5b128fae8e6dc2375343 Mon Sep 17 00:00:00 2001
+From: synt4x93 <synt4x.93@gmail.com>
+Date: Mon, 23 Mar 2020 19:37:12 +0000
+Subject: [PATCH 13/17] readelf: specify
+
+---
+ Makefile                | 5 +++++
+ scripts/link-vmlinux.sh | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index cfbd780b6cea..59720e95341a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -359,6 +359,11 @@ PERL		= perl
+ PYTHON		= python
+ CHECK		= sparse
+ 
++ifeq ($(CONFIG_EXYNOS_FMP_FIPS),)
++READELF        = $(CROSS_COMPILE)readelf
++export READELF
++endif
++
+ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
+ 		  -Wbitwise -Wno-return-void $(CF)
+ NOSTDINC_FLAGS  =
+diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
+index bd44f721aee2..bd18e46a36d7 100755
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -380,7 +380,7 @@ fi
+ 
+ if [ -n "${CONFIG_EXYNOS_FMP_FIPS}" ]; then
+     echo '  FIPS : Generating hmac of fmp and updating vmlinux... '
+-	PYTHONDONTWRITEBYTECODE=0 "${srctree}/scripts/fmp/fips_fmp_integrity.py" "${objtree}/vmlinux" "${CROSS_COMPILE}readelf"
++    PYTHONDONTWRITEBYTECODE=0 "${srctree}/scripts/fmp/fips_fmp_integrity.py" "${objtree}/vmlinux" "${READELF}"
+ fi
+ 
+ # We made a new kernel - delete old version file
+-- 
+2.17.1
+

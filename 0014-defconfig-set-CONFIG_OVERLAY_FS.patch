@@ -1,0 +1,53 @@
+From 4aa381c1da4e7837c1d2575667f9c71e12a39d0b Mon Sep 17 00:00:00 2001
+From: synt4x93 <synt4x.93@gmail.com>
+Date: Mon, 23 Mar 2020 19:31:49 +0000
+Subject: [PATCH 14/17] defconfig: set CONFIG_OVERLAY_FS
+
+---
+ arch/arm64/configs/exynos9810-crownlte_defconfig | 2 +-
+ arch/arm64/configs/exynos9810-star2lte_defconfig | 2 +-
+ arch/arm64/configs/exynos9810-starlte_defconfig  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm64/configs/exynos9810-crownlte_defconfig b/arch/arm64/configs/exynos9810-crownlte_defconfig
+index bf6692f07bab..6bd4830e4b1c 100644
+--- a/arch/arm64/configs/exynos9810-crownlte_defconfig
++++ b/arch/arm64/configs/exynos9810-crownlte_defconfig
+@@ -5282,7 +5282,7 @@ CONFIG_QUOTACTL=y
+ # CONFIG_AUTOFS4_FS is not set
+ CONFIG_FUSE_FS=y
+ # CONFIG_CUSE is not set
+-# CONFIG_OVERLAY_FS is not set
++CONFIG_OVERLAY_FS=y
+ 
+ #
+ # Caches
+diff --git a/arch/arm64/configs/exynos9810-star2lte_defconfig b/arch/arm64/configs/exynos9810-star2lte_defconfig
+index 47f5cf0a56ed..98abd89f376d 100644
+--- a/arch/arm64/configs/exynos9810-star2lte_defconfig
++++ b/arch/arm64/configs/exynos9810-star2lte_defconfig
+@@ -5289,7 +5289,7 @@ CONFIG_QUOTACTL=y
+ # CONFIG_AUTOFS4_FS is not set
+ CONFIG_FUSE_FS=y
+ # CONFIG_CUSE is not set
+-# CONFIG_OVERLAY_FS is not set
++CONFIG_OVERLAY_FS=y
+ 
+ #
+ # Caches
+diff --git a/arch/arm64/configs/exynos9810-starlte_defconfig b/arch/arm64/configs/exynos9810-starlte_defconfig
+index f25902089c26..653139e4f597 100644
+--- a/arch/arm64/configs/exynos9810-starlte_defconfig
++++ b/arch/arm64/configs/exynos9810-starlte_defconfig
+@@ -5289,7 +5289,7 @@ CONFIG_QUOTACTL=y
+ # CONFIG_AUTOFS4_FS is not set
+ CONFIG_FUSE_FS=y
+ # CONFIG_CUSE is not set
+-# CONFIG_OVERLAY_FS is not set
++CONFIG_OVERLAY_FS=y
+ 
+ #
+ # Caches
+-- 
+2.17.1
+
